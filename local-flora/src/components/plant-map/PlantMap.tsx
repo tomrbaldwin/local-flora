@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Map, LngLatLike, MapOptions } from "maplibre-gl";
+import { Map } from "maplibre-gl";
+import type { LngLatLike, MapOptions } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./PlantMap.css";
-import SearchControl from "../search/SearchControl"; // Path remains correct
+import SearchControl from "../search/SearchControl.tsx";
 
 /**
  * The main map component for the Local Flora atlas.
