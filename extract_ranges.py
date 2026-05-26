@@ -1,9 +1,10 @@
 import json
 import os
+import argparse
 from typing import List, Dict, Any, Optional
 
 import requests
-from shapely.geometry import Point, MultiPoint
+from shapely.geometry import Point, MultiPoint, shape
 from shapely.ops import unary_union
 
 class GbifRangeExtractor:
@@ -16,11 +17,21 @@ class GbifRangeExtractor:
     # (min_lon, min_lat, max_lon, max_lat)
     AUSTRALIA_BOUNDS = (112.0, -44.0, 154.0, -9.0)
 
-    def __init__(self, output_dir: str = "public/data"):
+    def __init__(self, output_dir: str = "public/data", coastline_file: str = "public/australia-coastline.geojson"):
         self.output_dir = output_dir
+        self.coastline_file = coastline_file
+        self.australian_landmass = self._load_australia_polygon()
+
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
             print(f"Created directory: {self.output_dir}")
+
+    def _load_australia_polygon(self):
+        print(f"Loading Australian coastline from {self.coastline_file}...")
+        with open(self.coastline_file, 'r') as f:
+            geojson_data = json.load(f)
+        # We assume the GeoJSON's first feature is the MultiPolygon of Australia
+        return shape(geojson_data['features']['geometry'])
 
     def get_species_key(self, scientific_name: str) -> Optional[int]:
         """
@@ -119,10 +130,18 @@ class GbifRangeExtractor:
             polygon = point_cloud.convex_hull.buffer(0.1)
 
         # If clustering results in separate polygons, unary_union will create a MultiPolygon
-        final_geometry = unary_union(polygon)
-        print(f"Generated a {final_geometry.geom_type}.")
-        return final_geometry
+        unioned_geometry = unary_union(polygon)
+        print(f"Generated a raw {unioned_geometry.geom_type}.")
 
+        if self.australian_landmass:
+            print("Clipping generated polygon to Australian coastline...")
+            clipped_geometry = unioned_geometry.intersection(self.australian_landmass)
+            print(f"Clipped geometry is a {clipped_geometry.geom_type}.")
+            return clipped_geometry
+        else:
+            print("Warning: No coastline data available. Polygon will not be clipped.")
+            return unioned_geometry
+        
     def export_to_geojson(self, taxon_key: int, scientific_name: str, record_count: int, geometry) -> None:
         """
         Exports the geometry and metadata to a GeoJSON file.
@@ -181,16 +200,17 @@ class GbifRangeExtractor:
 
 
 if __name__ == "__main__":
-    # --- Species to Process ---
-    target_species = [
-        "Banksia serrata",
-        "Eucalyptus globulus",
-        "Acacia pycnantha", # Golden Wattle
-        "Doryanthes excelsa" # Gymea Lily - might have a more clustered distribution
-    ]
+    parser = argparse.ArgumentParser(
+        description="Extract GBIF occurrence data for a plant species and generate a GeoJSON range polygon."
+    )
+    parser.add_argument(
+        "species",
+        nargs="+",
+        help="The scientific name(s) of the species to process (e.g., 'Banksia serrata')."
+    )
+    args = parser.parse_args()
 
     extractor = GbifRangeExtractor(output_dir="public/data")
 
-    for species_name in target_species:
+    for species_name in args.species:
         extractor.process_species(species_name)
-
