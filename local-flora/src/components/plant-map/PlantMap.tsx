@@ -5,25 +5,18 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./PlantMap.css";
 import SearchControl from "../search/SearchControl.tsx";
 
-interface PlantMapProps {
-  /** The GBIF taxonKey for the species to display. */
-  taxonKey: number;
-  /** The scientific name of the species. */
-  scientificName: string;
-}
-
 /**
  * The main map component for the Local Flora atlas.
  */
-const PlantMap: React.FC<PlantMapProps> = ({ taxonKey, scientificName }) => {
+const PlantMap: React.FC = () => {
   // Refs to hold the map container element and the map instance
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<Map | null>(null);
 
   // The ID for our plant data source and layers
-  const plantDataSourceId = `plant-data-${taxonKey}`;
-  const plantFillLayerId = `plant-fill-${taxonKey}`;
-  const plantLineLayerId = `plant-line-${taxonKey}`;
+  const plantDataSourceId = "banksia-serrata-data";
+  const plantFillLayerId = "banksia-serrata-fill";
+  const plantLineLayerId = "banksia-serrata-line";
 
   useEffect(() => {
     // Prevent map from re-initializing on hot reloads
@@ -60,7 +53,7 @@ const PlantMap: React.FC<PlantMapProps> = ({ taxonKey, scientificName }) => {
       // This fetches the file from the public directory.
       currentMap.addSource(plantDataSourceId, {
         type: "geojson",
-        data: `/data/${taxonKey}.geojson`, // Path relative to the public folder
+        data: "/data/8144360.geojson", // Path relative to the public folder
       });
 
       // 2. Add the semi-transparent fill layer
@@ -95,7 +88,7 @@ const PlantMap: React.FC<PlantMapProps> = ({ taxonKey, scientificName }) => {
       currentMap.remove();
       map.current = null;
     };
-  }, [taxonKey]); // Re-run effect if the taxonKey changes
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   /**
    * Handles the search submission.
@@ -103,9 +96,7 @@ const PlantMap: React.FC<PlantMapProps> = ({ taxonKey, scientificName }) => {
    */
   const handleSearch = (query: string) => {
     // Placeholder for future geocoding and map.flyTo() logic
-    console.log(
-      `Search for '${query}' submitted for map of '${scientificName}'`,
-    );
+    console.log(`Geocoding and flying to: ${query}`);
   };
 
   return (

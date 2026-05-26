@@ -1,6 +1,5 @@
 import json
 import os
-import argparse
 from typing import List, Dict, Any, Optional
 
 import requests
@@ -200,17 +199,15 @@ class GbifRangeExtractor:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Extract GBIF occurrence data for a plant species and generate a GeoJSON range polygon."
-    )
-    parser.add_argument(
-        "species",
-        nargs="+",
-        help="The scientific name(s) of the species to process (e.g., 'Banksia serrata')."
-    )
-    args = parser.parse_args()
+    # --- Species to Process ---
+    target_species = [
+        "Banksia serrata",
+        "Eucalyptus globulus",
+        "Acacia pycnantha", # Golden Wattle
+        "Doryanthes excelsa" # Gymea Lily - might have a more clustered distribution
+    ]
 
     extractor = GbifRangeExtractor(output_dir="public/data")
 
-    for species_name in args.species:
+    for species_name in target_species:
         extractor.process_species(species_name)
